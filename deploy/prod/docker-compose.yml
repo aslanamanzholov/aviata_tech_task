@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  django:
+    container_name: django
+    image: registry.gitlab.com/aviata_tech_task.kz/api/main:master
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - ./django.prod.env:/src/aviata_tech_task/helpers/.env
+      - ./media:/src/media
+      - ./logs:/logs
+      - ./gunicorn.conf.py:/src/gunicorn.conf.py
+      - static:/src/staticfiles
+    environment:
+      MODE: PROD
+
+  celery:
+    container_name: celery
+    image: registry.gitlab.com/aviata_tech_task.kz/api/main:master
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - ./celery.prod.env:/src/aviata_tech_task/helpers/.env
+    environment:
+      MODE: CELERY
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot:v0.37.2
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 144h & wait $${!}; done;'"
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+
+  nginx:
+    container_name: nginx
+    image: nginx:1-alpine
+    environment:
+      - TZ=Asia/Almaty
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./logs:/logs
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+      - dist:/dist
+      - static:/static
+    ports:
+      - 80:80
+      - 443:443
+
+  vue:
+    container_name: vue
+    image: registry.gitlab.com/aviata_tech_task.kz/api/client:master
+    entrypoint: cp -r /client/dist/ /
+    volumes:
+      - dist:/dist
+
+volumes:
+  dist:
+  static:

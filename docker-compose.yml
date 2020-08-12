@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: aviata_tech_postgres
+    image: postgres:12.1-alpine
+    logging:
+      driver: none
+    #volumes:
+    #  - ./postgres:/var/lib/postgresql/data:rw
+    #ports:
+    #  - 5432:5432
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+
+  rabbitmq:
+    container_name: aviata_tech_rabbitmq
+    image: rabbitmq:3.8.2-alpine
+    logging:
+      driver: none
+    #volumes:
+    #  - ./rabbitmq:/var/lib/rabbitmq:rw
+    #ports:
+    #  - 15672:15672
+    #  - 5672:5672
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=pass
+
+  redis:
+    container_name: aviata_tech_redis
+    image: redis:5.0.7-alpine3.10
+    logging:
+      driver: none
+
+  django:
+    container_name: aviata_tech_django
+    build: ./
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - ./src:/src:rw
+      - ./.env:/src/core/.env
+    depends_on:
+      - postgres
+    ports:
+      - 8000:8000
+    environment:
+      MODE: DEV
+      test: "pytest -v --cov . --cov-report term-missing
+      --cov-fail-under=100 --flake8 -n 6 --no-migrations
+      --reuse-db"
+      # TODO: append "-W error" to $test
+      #-W error"
+      makemigrations: python manage.py makemigrations
+      migrate: python manage.py migrate
+      makemessages: python manage.py makemessages
+      compilemessages: python manage.py compilemessages
+      outdated: pip list --outdated --format=columns
+      bandit: bandit -r .
+      safety: safety check
+      check: python manage.py check --deploy
+      shell: python manage.py shell_plus
+      createsuperuser: "python manage.py createsuperuser
+      --username=aslanamanzholov
+      --email=amanzholov.aslan@mail.ru"
+
+  celery:
+    container_name: aviata_tech_celery
+    build: ./
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - ./src:/src:rw
+      - ./.env:/src/core/.env
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      MODE: CELERY

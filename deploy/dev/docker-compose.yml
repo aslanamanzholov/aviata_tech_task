@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:12.0-alpine
+    logging:
+      driver: none
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.8.0-alpine
+    logging:
+      driver: none
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=pass
+
+  django:
+    container_name: django
+    image: registry.gitlab.com/sapsanedu/sapsan_edu:dev
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - ./dev.env:/src/core/.env
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      MODE: DEV
+
+  celery:
+    container_name: celery
+    image: registry.gitlab.com/sapsanedu/sapsan_edu:dev
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - ./dev.env:/src/core/.env
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      MODE: CELERY
