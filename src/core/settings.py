@@ -8,6 +8,7 @@ from sentry_sdk import init
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
+from .helpers.caches import CACHES
 from .helpers.default_apps import DEFAULT_APPS
 from .helpers.i18n_settings import (
     DEFAULT_LOCALE_PATHS, DEFAULT_LANGUAGES
@@ -25,9 +26,11 @@ BASE_DIR: str = dirname(dirname(abspath(__file__)))
 env = Env()
 Env.read_env()
 # Sentry
-SENTRY_DSN: str = env.str(var='SENTRY_DSN')
-integrations: Tuple = (DjangoIntegration(), CeleryIntegration())
-init(dsn=SENTRY_DSN, integrations=integrations)
+# SENTRY_DSN: str = env.str(var='SENTRY_DSN')
+# integrations: Tuple = (DjangoIntegration(), CeleryIntegration())
+# init(dsn=SENTRY_DSN, integrations=integrations)
+#
+CACHES: CACHES
 # Django
 DEBUG: bool = env.bool(var='DEBUG')
 SECRET_KEY: str = env.str(var='SECRET_KEY')
@@ -96,6 +99,7 @@ DEFAULT_FROM_EMAIL: str = EMAIL_HOST_USER
 EMAIL_HOST_PASSWORD: str = env.str(var='EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS: bool = env.bool(var='EMAIL_USE_TLS')
 EMAIL_USE_SSL: bool = env.bool(var='EMAIL_USE_SSL')
+DATE_INPUT_FORMATS = ['%d-%m-%Y']
 # Debug toolbar
 # if DEBUG:
 #     from .helpers.debug_settings import (

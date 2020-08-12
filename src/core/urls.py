@@ -2,10 +2,12 @@ from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import path, include
 
-from core.settings import DEBUG, MEDIA_URL, MEDIA_ROOT
+# from core.settings import DEBUG, MEDIA_URL, MEDIA_ROOT
+from .flight.views import FlightViewSet
 
 urlpatterns = i18n_patterns(
     path(route='admin/', view=admin.site.urls),
+    path(route='flights/', view=include('core.flight.urls')),
 )
 
 # if DEBUG:
