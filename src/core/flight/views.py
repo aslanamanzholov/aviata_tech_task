@@ -17,6 +17,7 @@ from .serializers import FlightSerializer
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 FLIGHT_URL = "https://api.skypicker.com/flights"
+BOOKING_URL = "https://booking-api.skypicker.com/api/v0.1/check_flights"
 
 headers = {
     'Content-Type': 'application/json'
@@ -31,8 +32,8 @@ class FlightViewSet(GenericAPIView):
         fly_from = self.request.data['fly_from']
         date_f = self.request.data['date_from']
         date_t = self.request.data['date_to']
-        adults = (self.request.data['adults'], 1)
-        infants = (self.request.data['infants'], 1)
+        adults = self.request.data['adults']
+        infants = self.request.data['infants']
 
         date_from = datetime.datetime.strptime(date_f, '%Y-%m-%d').strftime('%d/%m/%Y')
         date_to = datetime.datetime.strptime(date_t, '%Y-%m-%d').strftime('%d/%m/%Y')
@@ -57,16 +58,25 @@ class FlightViewSet(GenericAPIView):
             request = requests.get(FLIGHT_URL, params=PARAMS, headers=headers)
             data = request.json()
             arr = []
-            if data['data']:
-                minim = min(i['price'] for i in data['data'])
-                maxim = max(i['price'] for i in data['data'])
-                print(minim)
-                cheaper = maxim - minim
+            if 'data' in data and data['data'] is not None and data['data']:
+                # if sort from request is not valid
+                minimum = min(i['price'] for i in data['data'])
+                maximum = max(i['price'] for i in data['data'])
+                cheaper = maximum - minimum
+
+                print({"MIN": minimum, "MAX": maximum, "AVG": cheaper})
+
                 for i in data['data']:
-                    if i['price'] and i['price'] is not None:
-                        if i['price'] <= cheaper:
+                    if 'price' in i and i['price'] is not None:
+                        if len(arr) >= 10:
+                            break
+                        request_for_booking = requests.get(BOOKING_URL, params={"booking_token": i['booking_token']},
+                                                           headers=headers).json()
+                        if 'flights_invalid' in request_for_booking and \
+                                request_for_booking['flights_invalid'] is not True \
+                                and request_for_booking['price_change'] is not True:
                             arr.append(i)
-                            if len(arr) >= 10:
-                                break
-            cache.set(fly_from + fly_to + date_f + date_t, request.json(), timeout=CACHE_TTL)
-            return Response({"details": arr}, status=status.HTTP_201_CREATED)
+                cache.set(fly_from + fly_to + date_f + date_t, request.json(), timeout=CACHE_TTL)
+                return Response({"details": arr}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"details": data})
