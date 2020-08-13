@@ -8,6 +8,7 @@ DEFAULT_APPS: Tuple = (
     # side apps
     'corsheaders', 'rest_framework',
     'drf_yasg', 'django_extensions',
+    'celery', 'django_celery_beat',
     # project apps
     'core.flight',
 )
