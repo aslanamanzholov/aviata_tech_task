@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime as hi
+from datetime import datetime as dt
 import requests
 
 from django.conf import settings
@@ -12,8 +12,6 @@ from rest_framework.response import Response
 from .serializers import FlightSerializer
 
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
-
-BOOKING_URL = "https://booking-api.skypicker.com/api/v0.1/check_flights"
 
 headers = {
     'Content-Type': 'application/json'
@@ -50,14 +48,15 @@ class FlightViewSet(GenericAPIView):
 
                     for i in flights['data']:
                         if 'price' in i and i['price'] is not None:
-                            test = hi.fromtimestamp(i['dTimeUTC']).isoformat()
-                            if date_f <= test <= date_t:
+                            time_isoformat = dt.fromtimestamp(i['dTimeUTC']).isoformat()
+                            if date_f <= time_isoformat <= date_t:
                                 if len(arr) >= 10:
                                     break
-                                request_for_booking = requests.get(BOOKING_URL, params={"booking_token": i['booking_token'],
-                                                                                        "adults": adults, "children": children,
-                                                                                        "infants": infants, "pnum": pnum,
-                                                                                        "bnum": 0},
+                                request_for_booking = requests.get(settings.BOOKING_URL,
+                                                                   params={"booking_token": i['booking_token'],
+                                                                           "adults": adults, "children": children,
+                                                                           "infants": infants, "pnum": pnum,
+                                                                           "bnum": 0},
                                                                    headers=headers).json()
                                 if 'flights_invalid' in request_for_booking and \
                                         request_for_booking['flights_invalid'] is not True \

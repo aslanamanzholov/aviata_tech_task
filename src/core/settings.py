@@ -43,6 +43,7 @@ TEMPLATES: Tuple = DEFAULT_TEMPLATES
 WSGI_APPLICATION: str = 'core.wsgi.application'
 DATABASES: MappingProxyType = MappingProxyType({'default': env.db()})
 AUTH_PASSWORD_VALIDATORS: Tuple = DEFAULT_VALIDATORS
+BOOKING_URL: str = env.str(var='BOOKING_URL')
 # Security
 SECURE_BROWSER_XSS_FILTER: bool = True
 SESSION_COOKIE_SECURE: bool = False
